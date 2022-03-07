@@ -27,6 +27,23 @@ def calculate_to_ij(i, j, action):
         raise Exception("action is not valid!")
 
 
+def find_diff(a, desired_state):
+    for k in range(0, 3):
+        for l in range(0, 3):
+            if desired_state[k][l] == a:
+                return k, l
+    return -1, -1
+
+
+def calculate_f(state, desired_state):
+    s = 0
+    for i in range(0, 3):
+        for j in range(0, 3):
+            k, l= find_diff(state[i][j], desired_state)
+            s += abs(k - i) + abs(l - j)
+    return s
+
+
 class Node:
 
     def __init__(self, parent_state=None, parent_action=None, parent_cost=-1, state=None):
@@ -38,9 +55,14 @@ class Node:
             self.calculate_state(state)
         except Exception as e:
             raise e
+        self.key = self.generate_node_key()
         self.available_actions = self.calculate_available_actions()
         self.cost = parent_cost + 1
         pass
+
+    def generate_node_key(self):
+        keyarr = [f"{self.state[i][j] if self.state[i][j] is not None else '-'}" for i in range(0, 3) for j in range(0, 3)]
+        return ''.join(keyarr)
 
     def calculate_available_actions(self):
         actions = [top, bottom, left, right]
@@ -50,12 +72,8 @@ class Node:
                 acc.append(action)
         return acc
 
-    def is_equal_to(self, state):
-        for o in range(0, 3):
-            for w in range(0, 3):
-                if self.state[o][w] != state[o][w]:
-                    return False
-        return True
+    def is_equal_to(self, key):
+        return self.key == key
 
     def calculate_child_nodes(self):
         nodes = []
@@ -64,7 +82,7 @@ class Node:
                 n = Node([self.state[i].copy() for i in range(0, 3)], action, self.cost)
                 nodes.append(n)
             except Exception as e:
-                pass
+                print(e)
         return nodes
 
     def calculate_state(self, initial=None):
@@ -75,8 +93,8 @@ class Node:
                 for j in range(0, 3):
                     if self.state[i][j] is None:
                         try:
+                            initial_i, initial_j = i, j
                             self.i, self.j = calculate_to_ij(i, j, self.parent_action)
-                            initial_j, initial_j = i, j
                             break
                         except Exception as e:
                             raise e
